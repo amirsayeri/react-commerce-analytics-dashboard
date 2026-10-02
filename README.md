@@ -1,6 +1,6 @@
 # React Commerce Analytics Dashboard
 
-A polished, responsive e-commerce analytics dashboard built as a compact frontend portfolio project.
+A modern e-commerce analytics dashboard built with React, Tailwind CSS and Recharts, currently being expanded with real APIs, advanced reports and backend integration.
 
 ## Features
 - Responsive sidebar navigation
