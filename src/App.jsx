@@ -1,4 +1,6 @@
 import { useMemo, useState } from 'react'
+import AuthPage from './AuthPage'
+import OrdersPage from './OrdersPage'
 import {
   ArrowDownRight, ArrowUpRight, Bell, Boxes, CalendarDays, ChevronDown,
   CircleDollarSign, CreditCard, LayoutDashboard, Menu, PackageSearch, Search,
@@ -70,15 +72,15 @@ function StatusBadge({ status }) {
   return <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${styles[status]}`}>{status}</span>
 }
 
-function Sidebar({ open, onClose }) {
+function Sidebar({ open, onClose, activePage, onNavigate }) {
   const items = [
-    [LayoutDashboard, 'نمای کلی', true], [ShoppingBag, 'سفارش‌ها'], [PackageSearch, 'محصولات'],
+    [LayoutDashboard, 'نمای کلی', 'overview'], [ShoppingBag, 'سفارش‌ها', 'orders'], [PackageSearch, 'محصولات'],
     [Users, 'مشتریان'], [Boxes, 'موجودی انبار'], [CreditCard, 'پرداخت‌ها'],
   ]
   return (
     <>
       {open && <button onClick={onClose} className="fixed inset-0 z-40 bg-slate-950/30 backdrop-blur-sm lg:hidden" aria-label="بستن منوی ناوبری" />}
-      <aside className={`fixed inset-y-0 left-0 z-50 flex w-72 flex-col border-r border-slate-200 bg-white px-5 py-6 transition-transform duration-300 lg:translate-x-0 ${open ? 'translate-x-0' : '-translate-x-full'}`}>
+      <aside className={`fixed inset-y-0 right-0 z-50 flex w-72 flex-col border-l border-slate-200 bg-white px-5 py-6 transition-transform duration-300 lg:translate-x-0 ${open ? 'translate-x-0' : 'translate-x-full'}`}>
         <div className="flex items-center justify-between px-2">
           <div className="flex items-center gap-3">
             <div className="grid h-11 w-11 place-items-center rounded-2xl bg-indigo-600 font-black text-white">ک</div>
@@ -87,8 +89,8 @@ function Sidebar({ open, onClose }) {
           <button className="rounded-xl p-2 text-slate-500 lg:hidden" onClick={onClose}><X size={20} /></button>
         </div>
         <nav className="mt-10 space-y-2">
-          {items.map(([Icon, label, active]) => (
-            <button key={label} className={`flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-left text-sm font-semibold transition ${active ? 'bg-slate-950 text-white shadow-lg shadow-slate-200' : 'text-slate-500 hover:bg-slate-100 hover:text-slate-950'}`}>
+          {items.map(([Icon, label, page]) => (
+            <button key={label} aria-current={page === activePage ? 'page' : undefined} onClick={page ? () => { onNavigate(page); onClose() } : undefined} className={`flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-right text-sm font-semibold transition ${page === activePage ? 'bg-slate-950 text-white shadow-lg shadow-slate-200' : 'text-slate-500 hover:bg-slate-100 hover:text-slate-950'}`}>
               <Icon size={18} />{label}
             </button>
           ))}
@@ -104,6 +106,8 @@ function Sidebar({ open, onClose }) {
 }
 
 export default function App() {
+  const [showDashboard, setShowDashboard] = useState(false)
+  const [activePage, setActivePage] = useState('overview')
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [period, setPeriod] = useState('۷ روز گذشته')
   const [search, setSearch] = useState('')
@@ -113,26 +117,29 @@ export default function App() {
     return orders.filter((order) => [order.id, order.customer, order.product, order.status].join(' ').toLowerCase().includes(query))
   }, [search])
 
+  if (!showDashboard) return <AuthPage onPreview={() => setShowDashboard(true)} />
+
   return (
     <div className="min-h-screen">
-      <Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
-      <main className="lg:pl-72">
+      <Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} activePage={activePage} onNavigate={setActivePage} />
+      <main className="lg:pr-72">
         <header className="sticky top-0 z-30 border-b border-slate-200/80 bg-slate-50/80 backdrop-blur-xl">
           <div className="flex items-center justify-between gap-4 px-4 py-4 sm:px-6 lg:px-8">
             <div className="flex items-center gap-3">
               <button className="rounded-xl border border-slate-200 bg-white p-2.5 text-slate-600 lg:hidden" onClick={() => setSidebarOpen(true)}><Menu size={20} /></button>
-              <div><h1 className="text-lg font-bold text-slate-950 sm:text-xl">نمای کلی آمار</h1><p className="hidden text-sm text-slate-500 sm:block">عملکرد فروشگاه و فعالیت‌های اخیر را دنبال کنید.</p></div>
+              <div><h1 className="text-lg font-bold text-slate-950 sm:text-xl">{activePage === 'orders' ? 'مدیریت سفارش‌ها' : 'نمای کلی آمار'}</h1><p className="hidden text-sm text-slate-500 sm:block">{activePage === 'orders' ? 'پیگیری و مدیریت سفارش‌های فروشگاه.' : 'عملکرد فروشگاه و فعالیت‌های اخیر را دنبال کنید.'}</p></div>
             </div>
             <div className="flex items-center gap-2">
               <button className="grid h-11 w-11 place-items-center rounded-2xl border border-slate-200 bg-white text-slate-600"><Bell size={18} /></button>
-              <div className="hidden items-center gap-3 rounded-2xl border border-slate-200 bg-white px-3 py-2 sm:flex">
+              <button type="button" onClick={() => setShowDashboard(false)} aria-label="ورود به حساب" className="hidden items-center gap-3 rounded-2xl border border-slate-200 bg-white px-3 py-2 sm:flex">
                 <div className="grid h-8 w-8 place-items-center rounded-xl bg-indigo-100 text-xs font-bold text-indigo-700">ع‌ر</div>
                 <div className="leading-tight"><p className="text-sm font-semibold text-slate-900">علی رضایی</p><p className="text-xs text-slate-400">مدیر فروشگاه</p></div>
-              </div>
+              </button>
             </div>
           </div>
         </header>
 
+        {activePage === 'overview' && <div>
         <div className="mx-auto max-w-[1600px] px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
           <section className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
             <div>
@@ -190,7 +197,7 @@ export default function App() {
                 <label className="flex h-11 items-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 px-3 sm:w-64"><Search size={17} className="text-slate-400" /><input value={search} onChange={(e) => setSearch(e.target.value)} className="w-full bg-transparent text-sm outline-none placeholder:text-slate-400" placeholder="جستجوی سفارش‌ها..." /></label>
               </div>
               <div className="overflow-x-auto">
-                <table className="w-full min-w-[720px] text-left">
+                <table className="w-full min-w-[720px] text-right">
                   <thead><tr className="border-b border-slate-100 bg-slate-50/70 text-xs uppercase tracking-wide text-slate-400"><th className="px-6 py-4 font-semibold">سفارش</th><th className="px-6 py-4 font-semibold">مشتری</th><th className="px-6 py-4 font-semibold">محصول</th><th className="px-6 py-4 font-semibold">مبلغ</th><th className="px-6 py-4 font-semibold">وضعیت</th></tr></thead>
                   <tbody>{filteredOrders.map((order) => (
                     <tr key={order.id} className="border-b border-slate-100 last:border-0"><td className="px-6 py-4 text-sm font-semibold text-slate-950">{order.id}</td><td className="px-6 py-4 text-sm text-slate-600">{order.customer}</td><td className="px-6 py-4 text-sm text-slate-600">{order.product}</td><td className="px-6 py-4 text-sm font-semibold text-slate-950">{order.amount}</td><td className="px-6 py-4"><StatusBadge status={order.status} /></td></tr>
@@ -213,6 +220,8 @@ export default function App() {
           </section>
           <footer className="py-7 text-center text-xs text-slate-400">داشبورد تحلیل فروشگاه · پروژه نمونه‌کار</footer>
         </div>
+        </div>}
+        <div className={activePage === 'orders' ? undefined : 'hidden'}><OrdersPage /></div>
       </main>
     </div>
   )
